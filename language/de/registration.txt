@@ -1,0 +1,22 @@
+Vielen Dank für Ihre Registrierung.
+
+Ihre Benutzerdaten
+Ihre E-Mail: {FORM_USER_EMAIL}
+Benutzername: {FORM_USER_NICK}
+Kennwort: {FORM_USER_PASS}
+Freischaltecode: {FORM_ACT_CODE}
+
+Sie müssen Ihren Account erst freischalten, bevor Sie Spielen dürfen.
+Um Ihren Account freizuschalten folgen Sie dem folgendem Link:
+
+{FORM_ACT_LINK}
+
+Nach der Freischaltung können Sie sich Einloggen.
+
+
+
+Viel Spass beim Spielen wünscht
+
+Das 2f4y-Team
+
+www.2f4y-thegame.de

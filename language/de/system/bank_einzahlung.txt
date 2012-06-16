@@ -1,0 +1,4 @@
+Sie haben erfolgreich {MONEY}
+auf Ihr Girokonto eingezahlt!
+
+Denken Sie an die {SPERRE} Sperre!

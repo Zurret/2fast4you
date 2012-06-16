@@ -1,0 +1,2 @@
+Sie haben erfolgreich {MONEY}
+von Ihrem Girokonto abgehoben!

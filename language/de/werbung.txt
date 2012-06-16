@@ -1,0 +1,13 @@
+Hallo.
+
+Sie haben erfolgreich einen neuen
+Spieler ({VALUE_NEW_PLAYER}) angeworben!
+
+Dafuer werden Sie einen Bonus erhalten!
+Dieser wird am {VALUE_BONUS_TIME} eingeloest
+und Ihnen gutgeschrieben!
+
+
+Viel Spass weiterhin wünscht
+
+das 2f4y-Team

@@ -1,0 +1,8 @@
+Dein Sponsor hat Dir soeben
+die Sponsorbeiträge ausgezahlt!
+
+Basis pro Woche: {BASIS}
+Deine bisherigen Siege: {SIEGE}
+Der Siegesbonus des Sponsors: {BONUS}
+
+Überwiesen wurden Dir {BETRAG}!

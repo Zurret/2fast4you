@@ -1,0 +1,5 @@
+Sie haben den Vertrag
+mit {SPONSOR} gekündigt!
+
+Die Strafe, in höhe
+von {STRAFE}, wurde bezahlt!

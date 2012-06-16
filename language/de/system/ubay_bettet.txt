@@ -1,0 +1,4 @@
+Sie wurden bei dem Artikel
+'{ARTIKEL}' von {BIETER} überboten!
+
+Neuer Preis: {MONEY}

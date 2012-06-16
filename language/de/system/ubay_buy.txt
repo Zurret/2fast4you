@@ -1,0 +1,4 @@
+Sie haben erfolgreich den Artikel
+'{ARTIKEL}' bei ubay ersteigert!
+
+Sie zahlten dafür {MONEY}.

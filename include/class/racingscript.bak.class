@@ -1,0 +1,441 @@
+<?php
+
+class racingScript{
+
+    var $rennen         = array();
+    var $wetter         = array();
+    var $fahrer         = array();
+    var $strecke        = array();
+    var $schaden        = array();
+    var $originalCar    = array();
+    var $unfaelle       = array();
+    var $delays         = array();
+    var $ranking        = array();
+    var $wins           = array();
+    var $dauer          = 0;
+    var $s_skills       = array();
+    var $hindernisse    = array();
+    var $rekord_qry     = '';
+
+    function racingScript() {
+        global $tmp_connection;
+    }
+
+    function startRace() {
+        // Originale Werte der Fahrzeuge merken
+        for($x=0;$x!=count($this->fahrer);$x++) { $this->originalCar[$x] = $this->fahrer[$x]['car_info']; }
+        // Wetterwert anpassen
+        $this->wetter['wetter']--;
+        // Fähigkeiten verteilen
+        $this->splitSkills();
+        // Fahrzeuge der Fahrer tunen
+        $this->tuneCars();
+        // Unfallwahrscheinlich pro fahrer ermitteln
+        for($x=0;$x!=count($this->fahrer);$x++) { $this->getUnfallWert($x); }
+        // Strecke generieren
+        $this->genStrecke();
+        // Unfälle/Hindernisse generieren
+        $this->genEvents();
+        // Rennen simulieren
+        $this->startRacing();
+        // Variablen freigeben
+        $this->closeRacing();
+    }
+
+    function startRacing() {
+        $delay = array( //  Kurve       Steigung    Kreuzung    Brücke      Tunnel      S-Kufe        Hinderniss
+                            '0.8',      '0.95',     '0.9',      '1',        '0.3',      '0.6',        '0.75'                );
+        $speed = array();   // Aktuelle Geschwindigkeit der Fahrer
+        $the_race = array();
+        $package = '';
+        for($r=0;$r!=$this->rennen['runden'];$r++) {
+            if(!empty($r)) { $package .= '*'; }
+            $roundpack = '';
+		    for($x=0;$x!=count($this->strecke['gen']);$x++) {
+                if(!empty($x)) { $roundpack .= '#'; }
+                for($i=0;$i!=count($this->fahrer);$i++) {
+                    if(!empty($i)) { $roundpack .= '#'; }
+                    if(empty($speed[$i])) { $speed[$i] = $this->fahrer[$i]['car_info']['max_speed']; }
+                    if($this->strecke['gen'][$x][$i]['event']) {
+                        $speed[$i] = $this->fahrer[$i]['car_info']['max_speed'] * $delays[$this->strecke['gen'][$x][$i]['id']];
+                        $binfo = $this->getWeg( $this->fahrer[$i]['car_info']['ps'], $this->fahrer[$i]['car_info']['usetzung'], $this->fahrer[$i]['car_info']['gewicht'], $speed[$i], $this->fahrer[$i]['car_info']['max_speed'] );
+        				$renninfo[$i]['s'] += $binfo['sec'];
+                        $renninfo[$x]['m'] += $binfo['weg'];
+                        $this->genDemage($i, $this->strecke['gen'][$x][$i]['event'], $this->strecke['gen'][$x][$i]['id']);
+                    } else {
+                        $speed[$i] = $this->fahrer[$i]['car_info']['max_speed'] * $delay[$this->strecke['gen'][$x]['typ']];
+                        $binfo = $this->getWeg( $this->fahrer[$i]['car_info']['ps'], $this->fahrer[$i]['car_info']['usetzung'], $this->fahrer[$i]['car_info']['gewicht'], $speed[$i], $this->fahrer[$i]['car_info']['max_speed'] );
+                        $renninfo[$i]['s'] += $binfo['sec'];
+                        $renninfo[$x]['m'] += $binfo['weg'];
+                    }
+                    $tmp_event = $this->strecke['gen'][$x][$i]['event'];
+                    $tmp_evid = $this->strecke['gen'][$x][$i]['id'];
+                    if(!isset($tmp_event)) { $tmp_event = '-'; }
+                    if(!isset($tmp_evid)) { $tmp_evid = '-'; }
+                    // Aufbau des Packs [FeldTyp|FahrerID|Event|EventID|KmAngabe]
+                    $roundpack .= $this->strecke['gen'][$x]['typ'] . '|' . $this->fahrer[$i]['user_info']['id'] . '|' . $tmp_event . '|' . $tmp_evid . '|' . $this->strecke['gen'][$x]['km'];
+                }
+            }
+            $package .= $roundpack;
+            $this->genEvents();         // Events für neue Runde definieren
+            $this->tuneCars();          // Fahrzeuge mit neuem Schaden der Tuningteile tunen
+        }
+        for($x=0;$x!=count($this->fahrer);$x++) {
+            $rest = ($this->strecke['lenght'] * $this->rennen['runden']) - $renninfo[$x]['m'];
+            $renninfo[$x]['s'] += ($rest / ($this->fahrer[$x]['car_info']['max_speed'] / 3.6));
+            $this->ranking[$x]['s'] = $renninfo[$x]['s'];
+            $this->ranking[$x]['id'] = $this->fahrer[$x]['user_info']['id'];
+        }
+        $this->splitCashPot();          // Gewinn aufteilen
+        $this->checkRanking();          // Ranking überprüfung und unentschieden ausbessern
+        $this->makeRanking();           // Gewinner ermitteln
+        $this->saveDemage();            // Schaden an den Fahrzeugteilen verteilen
+        $this->wagenWert();             // Schaden am Fahrzeug verteilen
+        $this->saveRennen($package);    // Rennen in 'game_rennen_ende' schreiben
+    }
+
+    function checkRanking() {
+        $vorhanden = array();
+        $anzahl = count($this->ranking);
+        for($x=0;$x!=$anzahl;$x++) {
+            $got = FALSE;
+            for($i=0;$i!=count($vorhanden);$i++) { if($this->ranking[$x]['s'] == $vorhanden[$i]) { $this->ranking[$x]['s'] += 0.01; } }
+            $vorhanden[] = $this->ranking[$x]['s'];
+        }
+    }
+
+    function wagenWert() {
+        for($x=0;$x!=count($this->fahrer);$x++) {
+            $new = $this->fahrer[$x]['garage_info']['zustand'] - 0.5;
+            if($new > 5) { @mysql_query('UPDATE game_garage SET zustand="' . $new . '" WHERE id="' . $this->fahrer[$x]['garage_info']['id'] . '"'); }
+        }
+    }
+
+    function makeRanking() {
+        $times = array();
+        for($x=0;$x!=count($this->ranking);$x++) { $times[] = $this->ranking[$x]['s']; }
+        sort($times); $new_ranks = array();
+        for($x=0;$x!=count($times);$x++) {
+            for($i=0;$i!=count($this->ranking);$i++) {
+                if($times[$x] == $this->ranking[$i]['s']) {
+                    $new_ranks[$x] = array( $this->ranking[$i]['id'], $this->ranking[$i]['s'], $this->wins[$x] );
+                    break(1);
+                }
+            }
+        }
+        $package = '';
+        for($x=0;$x!=count($new_ranks);$x++) {
+            if(!empty($x)) { $package .= '|'; }
+            $package .= $new_ranks[$x][0] . ':' . $new_ranks[$x][1] . ':' . $this->wins[$x];
+            $this->dauer = $new_ranks[$x][1];
+        }
+        unset($this->ranking);
+        $this->ranking['rank'] = $new_ranks;
+        $this->ranking['pack'] = $package;
+    }
+
+    function saveDemage() {
+        for($x=0;$x!=count($this->fahrer);$x++) {
+            $dmg = $this->fahrer[$x]['tune_info']['tuned'];
+            @mysql_query('UPDATE game_incars SET tuned="' . $dmg . '" WHERE id="' . $this->fahrer[$x]['tune_info']['id'] . '"');
+        }
+    }
+
+    function saveRennen($package) {
+        // Einige Vars errechnen/definieren
+        $anzahl_fahrer = count($this->fahrer);
+        $anzahl_ranking = count($this->ranking);
+        $gewinn = ($this->rennen['einsatz'] * $anzahl_fahrer);
+        $rennende = time() + $this->getRennDauer();
+        $tmp_sql = array();
+        $erfahrung = floor($anzahl_fahrer * 2) + round((($this->strecke['lenght'] * $this->rennen['runden'] / 1000) / 3), 0);
+        if($anzahl_fahrer > 5) {
+			$potansehen = ceil($anzahl_fahrer * 1.5) + round((($this->strecke['lenght'] * $this->rennen['runden'] / 1000) / 2), 0);
+		} else {
+			$potansehen = $anzahl_fahrer + round((($this->strecke['lenght'] * $this->rennen['runden'] / 1000) / 3), 0);
+        }
+		for($x=0;$x!=$anzahl_fahrer;$x++) {
+            $user_id = $this->ranking['rank'][$x][0]; $tmp_sieg = '';
+            $userinfo = mysql_fetch_array(mysql_query('SELECT * FROM game_user WHERE id="' . $user_id . '" LIMIT 1'));
+            if(empty($x)) {
+                $tmp_data_sponsor = mysql_fetch_array(mysql_query('SELECT * FROM game_sponsoren WHERE user_id="' . $user_id . '" LIMIT 1'));
+                $tmp_sponsor = '|UPDATE game_sponsoren SET sprs_now_wins=\"' . ($tmp_data_sponsor['sprs_now_wins'] + 1) . '\" WHERE user_id=\"' . $user_id . '\"';
+                $tmp_sponsor .= $this->rekord_qry;
+                $tmp_sieg = 'wins=\"' . ($userinfo['wins'] + 1) . '\", ';
+                $gib_ruf = $userinfo['ruf'] + ceil($erfahrung * 0.3);
+                $erfahrung -= $gib_ruf;
+                $gib_ansehen = $userinfo['ansehen'] + ceil($potansehen * 0.2);
+                $potansehen -= $gib_ansehen;
+            } else {
+                $tmp_sponsor = '';
+                $gib_ruf = $userinfo['ruf'];
+                if($anzahl_fahrer > 5) { $gib_ansehen = $userinfo['ansehen'] - 1; } else { $gib_ansehen = $userinfo['ansehen']; }
+                if($gib_ansehen <= 0) { $gib_ansehen = 0; }
+            }
+            $gib_geld = $this->wins[$x];
+            $tmp_tankinhalt = ($this->fahrer[$x]['garage_info']['car_tank'] - ceil((round($this->strecke['lenght'] * $this->rennen['runden'], 0) / 10000)));
+            if($tmp_tankinhalt <= 0) { $tmp_tankinhalt = 0; }
+            @mysql_query('DELETE FROM game_busy WHERE user_id="' . $user_id . '"');
+            $tmp_do_after = 'UPDATE game_user SET ' . $tmp_sieg . 'ansehen=\"' . $gib_ansehen . '\", ruf=\"' . $gib_ruf . '\" WHERE id=\"' . $this->ranking['rank'][$x][0] . '\"';
+            $tmp_do_after .= $tmp_sponsor;
+            $tmp_do_after .= '|UPDATE game_garage SET car_tank=\"' . $tmp_tankinhalt . '\" WHERE id=\"' . $this->fahrer[$x]['user_info']['now_car'] . '\"';
+            $tmp_sql[] = 'INSERT INTO game_busy VALUES("", "' . $user_id . '", "' . ($rennende + 30) . '", "9", "' . $gib_geld . '", "1", "' . $tmp_do_after . '")';
+        }
+        // Rennen aus den offenen Rennen entfernen
+        $tmp_sql[] = 'DELETE FROM game_rennen WHERE id="' . $this->rennen['id'] . '"';
+        // Rennen in DB schreiben
+        $tmp_sql[] = 'INSERT INTO game_rennen_ende VALUES("", "' . $rennende . '", "' . $this->strecke['id'] . '", "' . $this->getRennDauer() . '", "' . $gewinn . '", "' . $this->ranking['pack'] . '", "' . $package . '")';
+        // Siege des Benutzers
+        for($x=0;$x!=count($tmp_sql);$x++) { mysql_query($tmp_sql[$x]); }
+    }
+
+    function splitCashPot() {
+        $anzahl = count($this->fahrer);
+        $gewinn = $this->rennen['einsatz'] * $anzahl;
+        if($anzahl == 3) {
+            $this->wins[0] = round($gewinn * 0.8, 0); $gewinn -= $this->wins[0];
+            $this->wins[1] = round($gewinn * 1, 0); $gewinn -= $this->wins[1];
+            $this->wins[2] = round($gewinn * 1, 0); $gewinn -= $this->wins[2];
+        } elseif($anzahl == 2) {
+            $this->wins[0] = $gewinn * 1.0; $gewinn -= $this->wins[0];
+            $this->wins[1] = $gewinn; $gewinn -= $this->wins[1];
+        } else {
+            for($x=0;$x!=$anzahl;$x++) {
+                if($x == ($anzahl - 1)) {
+                    $this->wins[$x] = $gewinn;
+                } else {
+                    $this->wins[$x] = round($gewinn * 0.8, 0);
+                    $gewinn -= $this->wins[$x];
+                }
+            }
+        }
+    }
+
+    function genDemage($fahrer, $crashtyp, $unfallid) {
+        if($crashtyp != '-' && $unfallid != '-') {
+            $schaden = $this->schaden[$crashtyp][$unfallid];
+            if(count($schaden) != 0) {
+                $tuned_pack = $this->fahrer[$fahrer]['tune_info']['tuned'];
+                for($x=0;$x!=count($schaden);$x++) {
+                    $tteil = explode('#', $tuned_pack);
+                    $schaden_pack = '';
+                    $schaden_info = explode('|', $schaden[$x]);
+                    for($i=0;$i!=count($tteil);$i++) {
+                        $teil_info = explode(';', $tteil[$i]);
+                        if(!empty($i)) { $schaden_pack .= '#';}
+                        if($i == $schaden_info[0]) {
+                            $new_schaden = round($teil_info[1] * (1 - $schaden_info[1]), 0);
+                        } else {
+                            $new_schaden = $teil_info[1];
+                        }
+                        $schaden_pack .= $teil_info[0] . ';' . $new_schaden;
+                    }
+                    $tuned_pack = $schaden_pack;
+                }
+                $this->fahrer[$fahrer]['tune_info']['tuned'] = $tuned_pack;
+            }
+        }
+    }
+
+    function getRennDauer() {
+        return ceil($this->dauer + 185);
+    }
+
+    function getWeg($ps, $usetz, $gewicht, $start, $max) {
+        $binfo = array();
+        $a = (($ps * 0.73549875 * 1000) / (2 * pi()) / 3000) / $usetz / $gewicht;
+        $binfo['sec'] = ($max - $start) / 3.6 / $a;
+        $binfo['weg'] = ($a / 2 * ( $binfo['sec'] * $binfo['sec'])) + (($start / 3.6) * $binfo['sec']);
+        return $binfo;
+    }
+
+    function genEvents() {
+        $events      =   array(  //  Kurve     Steigung    Kreuzung    Brücke      Tunnel      S-Kufe        Hinderniss
+                                     0.15,      0.05,        0.21,       0.07,       0.22,       0.20,         0.32            );
+        srand(microtime() * 192735468);
+        for($x=0;$x!=count($this->strecke['gen']);$x++) {
+            for($i=0;$i!=count($this->fahrer);$i++) {
+                $zufall = rand(0, 100000);
+                $unfall = $this->fahrer[$i]['unfallwert'] * 1000;
+                if($zufall <= $unfall) {
+                    $stnd = $events[$this->strecke['gen'][$x]['typ']];
+                    $crashed = $unfall * $stnd;
+                    // Ausweichtechnik-Skill verrechnen - 20%
+                    if(!empty($this->s_skills[$i][3]['level']) && $this->s_skills[$i][3]['level'] != 0) { $crashed = $crashed * ($this->s_skills[$i][3]['level'] / 5); }
+                    if($zufall <= $crashed) { $event = 1; $ev_id = rand(0, (count($this->unfaelle) - 1)); } else { $event = 0; $ev_id = rand(0, (count($this->hindernisse) - 1)); }
+                    $this->strecke['gen'][$x][$i]['event'] = $event;
+                    $this->strecke['gen'][$x][$i]['id'] = $ev_id;
+                }
+            }
+        }
+    }
+
+    function genStrecke() {
+        $st_typ = $this->strecke['type'];
+        $st_len = $this->strecke['lenght'];
+        $strecke    =   array(         //      Kurve     Steigung    Kreuzung    Brücke      Tunnel      S-Kufe    Hinderniss
+                                   array(      22,       28,         48,         62,         68,         80,       100           ), // Stadtstrecke
+                                   array(      15,       30,         50,         57,         70,         80,       100           ), // Bergstrecke
+                                   array(      28,       40,         48,         54,         62,         80,       100           ), // Landstrecke
+                                   array(      24,       50,         60,         65,         70,         80,       100           ), // Waldstrecke
+                                   array(      18,       30,         35,         60,         70,         80,       100           )  // Autobahn
+                                );
+        $felder  =  round( $st_len / 1000 ) * 2;
+        for($x=0;$x!=$felder;$x++) {
+            srand(microtime() * 192735468);
+            $zufall = rand(0, 100);
+            for($i=0;$i!=count($strecke[$st_typ]);$i++) {
+                if($zufall <= $strecke[$st_typ][$i]) {
+                    //if($i == 6) { $st_info[$x]['hind'] = rand(0, count($this->hindernisse)); } else { $st_info[$x]['hind'] = NULL; }
+                    $st_info[$x]['typ'] = $i;
+                    $st_info[$x]['km']  = rand(100,400) + (500 * $x);
+                    if($st_info[$x]['km'] >= $this->strecke['lenght']) { $st_info[$x]['km'] = $this->strecke['lenght'] - rand(2, 20); }
+                    break(1);
+                }
+            }
+        }
+        $this->strecke['gen'] = $st_info;
+    }
+
+    function getUnfallWert($fahrer) {
+        $weather      = array(      //                    Stnd    Reifen  Licht Nacht
+                                              array(      20,     18,     3,    6  ),
+                                              array(      30,     26,     5,    9  ),
+                                              array(      40,     35,     5,    9  ),
+                                              array(      35,     30,     3,    7  ),
+                                              array(      40,     38,     8,    10 ),
+                                              array(      25,     23,     2,    5  ),
+                                              array(      22,     20,     3,    7  ),
+                                              array(      32,     30,     2,    4  )            );
+        $bremsen        = $this->gotTuned($fahrer, 3);
+        $scheinwerfer   = $this->gotTuned($fahrer, 7);
+        $reifen         = $this->gotTuned($fahrer, 19);
+        $temp           = $this->wetter['temp'];
+        $wert           = $weather[$this->wetter['wetter']][0];
+        $bad_wetter     = $this->badWeather();
+        if($reifen) { $wert = $weather[$this->wetter['wetter']][1]; }
+        if(date('H') > 21 && date('H' < 7)) {
+            $wert += $weather[$this->wetter['wetter']][3];
+            // Falls Scheinwerfer getunt wurden, diese beachten
+            if($scheinwerfer) { $wert -= $weather[$this->wetter['wetter']][2]; }
+            // Sicherheitstechnik-Skill verrechnen - ca. 2%
+            if(!empty($this->s_skills[$fahrer][2]['level'])) { $skill = $this->s_skills[$fahrer][2]['level'] / 50; $wert -= $skill; }
+        }
+        if($bad_wetter) {
+            // Sicherheitstechnik-Skill verrechnen - ca. 3%
+            if(!empty($this->s_skills[$fahrer][2]['level'])) { $skill = $this->s_skills[$fahrer][2]['level'] / 33; $wert -= $skill; }
+            // Bremsentuning verrechnen - 3% Bonus
+            if($bremsen) { $wert = $wert * 0.97; }
+        }
+        // Je 5° unterschied um einen wert ändern
+        if($temp != 15) { if($temp > 15) { for($x=($temp-15);$x>0;$x-=5) { $wert--; } } elseif($temp < 15) { for($x=($temp-15);$x<0;$x+=5) { $wert++; } } }
+        // Fahren-Skill verrechnen - ca. 10%
+        if(!empty($this->s_skills[$fahrer][0]['level'])) { $skill = $this->s_skills[$fahrer][0]['level'] / 10; $wert -= $skill; }
+        // Fahrtechnik-Skill verrechnen - 5%
+        if(!empty($this->s_skills[$fahrer][1]['level'])) { $skill = $this->s_skills[$fahrer][1]['level'] / 20; $wert -= $skill; }
+        // Verkehrsdichte beachten und verwerten
+        $wert += ($this->strecke['traffic'] / 10);
+        // Unfallwahrscheinlichkeit dem Fahrer zuordnen
+        $this->fahrer[$fahrer]['unfallwert'] = $wert;
+    }
+
+    function gotTuned($fahrer, $kat) {
+        if($this->fahrer[$fahrer]['tune_info']) {
+            $tmp = explode('#', $this->fahrer[$fahrer]['tune_info']['tuned']);
+            for($x=0;$x!=count($tmp);$x++) {
+                if($x == $kat) {
+                    $tmp1 = explode(';', $tmp[$x]);
+                    if($tmp1[0] != 'w') {
+                        return TRUE;
+                        break(1);
+                    } else {
+                        return FALSE;
+                        break(1);
+                    }
+                }
+            }
+        } else { return FALSE; }
+    }
+
+    function splitSkills() {
+        for($x=0;$i!=count($this->fahrer);$i++) {
+            if(!empty($this->fahrer[$i]['skill_info']['skl_werte'])) {
+                $tmp = explode('#', $this->fahrer[$i]['skill_info']['skl_werte']);
+                for($x=0;$x!=count($tmp);$x++) {
+                    $ttmp = explode(';', $tmp[$x]);
+                    $this->s_skills[$i][$ttmp[0]]['level']     = $ttmp[1];
+                    $this->s_skills[$i][$ttmp[0]]['last']      = $this->fahrer[$i]['skill_info']['skl_last'];
+                    $this->s_skills[$i][$ttmp[0]]['now']       = $ttmp[2];   ;
+                }
+            }
+        }
+    }
+
+    function closeRacing() {
+        unset($this->rennen);
+        unset($this->wetter);
+        unset($this->fahrer);
+        unset($this->strecke);
+        unset($this->unfaelle);
+        unset($this->delays);
+        unset($this->ranking);
+        unset($this->s_skills);
+        unset($this->hindernisse);
+    }
+
+    function tuneCars() {
+        for($x=0;$x!=count($this->fahrer);$x++) {
+            if(!empty($this->fahrer[$x]['tune_info']['tuned'])) {
+                $gesamtschaden = 0;
+                $getunt['ps'] = $this->originalCar[$x]['ps'];
+                $getunt['gewicht'] = $this->originalCar[$x]['gewicht'];
+                $getunt['max_speed'] = $this->originalCar[$x]['max_speed'];
+                $getunt['go_speed'] = $this->originalCar[$x]['go_speed'];
+                $tmp = explode('#', $this->fahrer[$x]['tune_info']['tuned']);
+                for($i=0;$i!=count($tmp);$i++) {
+                    $tteil = explode(';', $tmp[$i]);
+                    if($tteil != 'w') {
+                        $data = @mysql_fetch_array(@mysql_query('SELECT * FROM game_tuning WHERE id="' . $tteil[0] . '" && kat_id="' . $i . '" LIMIT 1'));
+                        // Tuningteilbonus verrechnen
+                        $getunt['ps'] += $data['ps'];
+                        $getunt['gewicht'] += $data['gewicht'];
+                        $getunt['kmh'] += $data['kmh'];
+                        $getunt['go_speed'] -= $data['go_speed'];
+                    }
+                    $gesamtschaden += $tteil[1];
+                }
+                // Gesamtschaden verrechnen
+                $prozent = round($gesamtschaden / (count($tmp) * 100), 2);
+                $this->fahrer[$x]['car_info']['ps']         = ($this->originalCar[$x]['ps'] + $getunt['ps'])                * $prozent;
+                $this->fahrer[$x]['car_info']['max_speed']  = ($this->originalCar[$x]['max_speed'] + $getunt['kmh'])        * $prozent;
+                $this->fahrer[$x]['car_info']['go_speed']   = ($this->originalCar[$x]['go_speed'] + $getunt['go_speed'])    * ((1 - $prozent ) + 1);
+                $this->fahrer[$x]['car_info']['gewicht']    = $getunt['gewicht'];
+                unset($getunt);
+            }
+        }
+    }
+
+    function badWeather() {
+        $zahl = $this->wetter['wetter'];
+        switch($zahl) {
+            case '1': return FALSE; break;
+            case '2': return FALSE; break;
+            case '3': return TRUE; break;
+            case '4': return TRUE; break;
+            case '5': return TRUE; break;
+            case '6': return TRUE; break;
+            case '7': return FALSE; break;
+        }
+    }
+
+    function setRennen($rennen) { $this->rennen = $rennen; }
+    function setWetter($wetter) { $this->wetter = $wetter; }
+    function setFahrer($fahrer) { $this->fahrer = $fahrer; }
+    function setUnfaelle($unfall) { $this->unfaelle = $unfall; }
+    function setDemage($demage) { $this->schaden = $demage; }
+    function setDelays($delays) { $this->delays = $delays; }
+    function setStrecke($strecke) { $this->strecke = $strecke; }
+    function setHindernisse($hindernisse) { $this->hindernisse = $hindernisse; }
+
+}
+?>                                   

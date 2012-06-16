@@ -1,0 +1,4 @@
+Ihr neues Fahrzeug steht nun in Ihrer Garage.
+
+Der Tankinhalt des Fahrzeugs
+nach der Überführung: {LITER} l

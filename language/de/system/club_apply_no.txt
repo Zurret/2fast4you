@@ -1,0 +1,4 @@
+Deine Bewerbung bei {CLUB}
+wurde abgelehnt!
+
+Versuche es bei einem anderen!

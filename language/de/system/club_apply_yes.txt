@@ -1,0 +1,4 @@
+Deine Bewerbung bei {CLUB}
+wurde akzeptiert!
+
+Du bist nun ein Mitglied des Clubs!

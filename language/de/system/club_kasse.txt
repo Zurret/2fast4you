@@ -1,0 +1,2 @@
+Ihnen wurden gerade {MONEY} aus
+der Clubkasse von {CLUB} ausgezahlt!

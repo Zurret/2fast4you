@@ -1,0 +1,4 @@
+Die Zinsen wurden Dir für Deine
+{MONEY} aufs Girokonto gutgeschrieben!
+
+Neuer Girokontostand: {NEW_MONEY}

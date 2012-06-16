@@ -1,0 +1,76 @@
+body {
+	font-family: Calibri, "Bookman Old Style", Verdana;
+	font-size: 12px;
+	background-color: #111111;
+	color: #666666;
+	font-weight: bold;
+}
+
+table {
+    border-collapse: collapse;
+}
+.space {
+	background-image: url(../images/design/begrenzung.gif);
+}
+.ueberschift{
+	background-image: url(../images/design/cellpic.gif);
+	font-size: 12px;
+	font-weight: bold;
+	color: #000000;
+}
+.innen {
+	background-color: #1D1D1D;	
+}
+a:link {
+	color: #666666;
+	text-decoration: none;
+    outline-width: 0px;
+}
+a:visited {
+	color: #666666;
+	text-decoration: none;
+    outline-width: 0px;
+}
+a:hover {
+	color: #A50122;
+	text-decoration: none;
+    outline-width: 0px;
+}
+a:active {
+	color: #666666;
+	text-decoration: none;
+    outline-width: 0px;
+}
+.button{
+	font-size: 10px;
+	color: #000000;
+	background-color: #B42525;
+	font-weight: bold;
+	border: thin groove #000000;
+}
+.dropdown{
+	font-size: 10px;
+	color: #000000;
+	background-color: #B42525;
+	font-weight: bold;
+	border: thin groove #000000;
+}
+.txtfeld{
+	font-size: 10px;
+	color: #000000;
+	background-color: #B42525;
+	font-weight: bold;
+	border: thin groove #000000;
+}
+.txtarea{
+	font-size: 14px;
+	color: #000000;
+	background-color: #B42525;
+	font-weight: bold;
+	border: thin groove #000000;
+}
+.checkbox{
+	color: #000000;
+	background-color: #B42525;
+	border: thin groove #000000;
+}

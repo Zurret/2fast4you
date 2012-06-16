@@ -1,0 +1,9 @@
+Du hast erfolgreich den Vertrag mit
+{SPONSOR} unterschrieben!
+
+Zahlungen:
+Basis pro Woche: {BASIS}
+Bonus bei Siegen: {BONUS}
+
+Die Dauer des Vertrages wurde
+auf {DAUER} Wochen gesetzt!

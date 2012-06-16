@@ -1,0 +1,10 @@
+Die 2F4Y-Bank zahlt um 04:00 Uhr die Zinsen aus.<br />
+Auszahlungen erst 24h nach Einzahlung!<br />
+<br />
+Zinsübersicht:<br />
+<br />
+Kontostand <=  10.000 € -> 2%/Monat<br />
+Kontostand <=  30.000 € -> 3%/Monat<br />
+Kontostand <=  80.000 € -> 4%/Monat<br />
+Kontostand <= 150.000 € -> 5%/Monat<br />
+Kontostand > 150.000 € -> 6%/Monat<br /><br />

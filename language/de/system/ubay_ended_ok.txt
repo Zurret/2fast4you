@@ -1,0 +1,8 @@
+Sie haben Ihren Artikel
+'{ARTIKEL}' verkauft!
+
+Die Auktion hat Ihnen
+{MONEY} gebracht!
+
+Ihnen wurde der Geldbetrag
+bereits überwiesen!

@@ -1,0 +1,98 @@
+<?php
+
+/*
+$pwcode = new imgCode('courier_new.ttf', 'pwcode_' . time());
+echo "<img src='" . $pwcode->regenerateCode(7) . "'><br>&nbsp;<b>" . $pwcode->getPassword() . "</b>";
+*/
+
+class imgCode {
+
+    var $gl_pic = '';
+    var $gl_pic_w = '';
+    var $gl_pic_h = '';
+    var $gl_pic_n = '';
+    var $gl_chr = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 't', 'u', 'v', 'w', 'x', 'y', 'z');
+    var $gl_tmp = 'temp/';
+    var $gl_fcr = array('128, 128, 128');
+    var $gl_bcr = array('255, 255, 255');
+    var $gl_ttf = '';
+    var $gl_lng = 5;
+    var $gl_sze = 10;
+    var $gl_npw = '';
+    var $gl_qlt = 65;
+
+    function imgCode($ttffont, $filename, $lenght = 0, $chars = 0, $fontcolor = 0, $backcolor = 0, $fontsize = 0, $temp = 0, $quality = 0) {
+        $this->deleteTemp();
+        if(!empty($ttffont)) {$this->gl_ttf = $ttffont;} else {exit('<b>IMG-Code: Error 1!</b>');}
+        if(!empty($filename)) {$this->gl_pic_n = $filename . '.jpg';} else {exit('<b>IMG-Code: Error 2!</b>');}
+        if(!empty($lenght)) {$this->gl_lng = $lenght;}
+        if(!empty($chars) && is_array($chars)) {$this->gl_chr = $chars;}
+        if(!empty($fontcolor) && is_array($fontcolor)) {$this->gl_fcr = $fontcolor;}
+        if(!empty($backcolor) && is_array($backcolor)) {$this->gl_bcr = $backcolor;}
+        if(!empty($fontsize)) {$this->gl_sze = $fontsize;}
+        if(!empty($temp)) {$this->gl_tmp = $temp;}
+        if(!empty($quality)) {$this->gl_qlt = $quality;}
+        $this->createImg();
+    }
+
+    function getPath() {
+        return $this->gl_tmp . $this->gl_pic_n;
+    }
+
+    function regenerateCode($lenght = 0) {
+        if(!empty($lenght)) {$this->gl_lng = $lenght;}
+        return $this->createImg();
+    }
+
+    function getPassword() {
+        return $this->gl_npw;
+    }
+
+    function createImg() {
+        $this->gl_npw = $this->generatePassword($this->gl_lng);
+        $this->gl_pic_w = imagefontwidth($this->gl_sze) * strlen($this->gl_npw) + 5;
+        $this->gl_pic_h = imagefontheight($this->gl_sze) + 2;
+        $this->gl_pic = imagecreate($this->gl_pic_w, $this->gl_pic_h);
+        shuffle($this->gl_bcr);
+        $tmp_bgcolor = explode(",", $this->gl_bcr[0]);
+        $tmp_bgcolor = imagecolorallocate($this->gl_pic, $tmp_bgcolor[0], $tmp_bgcolor[1] , $tmp_bgcolor[2]);
+        shuffle($this->gl_fcr);
+        $tmp_txtcolor = explode(",", $this->gl_fcr[0]);
+        $tmp_txtcolor = imagecolorallocate($this->gl_pic, $tmp_txtcolor[0], $tmp_txtcolor[1], $tmp_txtcolor[2]);
+        $savefile = $this->gl_tmp . $this->gl_pic_n;
+        $this->makeDir($this->gl_tmp);
+        imagestring($this->gl_pic, $this->gl_sze, 2, 2, $this->gl_npw, $tmp_txtcolor);
+        imagejpeg($this->gl_pic, $this->gl_tmp . $this->gl_pic_n, $this->gl_qlt);
+        imagedestroy($this->gl_pic);
+        return $savefile;
+    }
+
+    function makeDir($dir) {
+        $tmp = explode("/", $dir);
+        $tmp_dir = "";
+        for($x=0;$x<=count($tmp);$x++){$tmp_dir .= $tmp[$x] . "/"; if(!is_dir($tmp_dir) && !empty($tmp[$x])) {if(mkdir($tmp_dir, "0777")) {$tmp_dir .= "/";}}}
+    }
+
+    function generatePassword($lenght) {
+        srand((double)microtime() * 10000000);
+        $tmp_pw = '';
+        for($x=0;$x!=$lenght;$x++) {
+            $z = rand(0, (count($this->gl_chr) - 1));
+            $tmp_pw .= strtoupper($this->gl_chr[$z]);
+        }
+        return $tmp_pw;
+    }
+
+    function deleteTemp() {
+        $anzahl = 0;
+        $od = opendir($this->gl_tmp);
+        while($file = readdir($od)) { $anzahl++; }
+        closedir($od);
+        if($anzahl >= 51) {
+            $od = opendir($this->gl_tmp);
+            while($file = readdir($od)) { @unlink($this->gl_tmp . $file); }
+            closedir($od);
+        }
+    }
+}
+?>                                   

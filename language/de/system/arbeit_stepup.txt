@@ -1,0 +1,4 @@
+Herzlichen Glückwunsch,
+Sie sind befördert worden!
+
+Neuer Stundenlohn: {LOHN}
