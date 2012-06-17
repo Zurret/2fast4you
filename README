@@ -1,6 +1,6 @@
 Nach der Installation hilft das hier:
 
-[PHP]
+<code>
    if(empty($_POST['check'])) {
         echo '<form action="" method="POST">Sind Sie wirklich sicher, die Werte neu zu berechnen und zu Speichern?<br><input type="hidden" name="check" value="1"><input type="submit" value="Ich bin mir v&ouml;llig sicher!"><br/><br/>HINWEIS:<br>Dieser Vorgang kann NICHT R&uuml;ckg&auml;ngig gemacht werden!</form>';
 
@@ -21,6 +21,6 @@ Nach der Installation hilft das hier:
             echo 'PS: <b>' . $ps . '</b> | 0-100: <b>' . $sec . '</b> | Gewicht: <b>' . $gewicht . '</b> | Übersetzung: <b>' . $usetz . '</b> | MySQL-Query: <b>' . $tok . '</b><BR />';
         }
     }
-[/PHP]
+</code>
 
     Einfach in eine datei speichern und die require_once zeile anpassen.
