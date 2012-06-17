@@ -2,9 +2,9 @@
 
 // MySQL Verbindungsdaten
 define( 'MYSQL_HOST', 'localhost');
-define( 'MYSQL_USER', '');
-define( 'MYSQL_PASS', '');
-define( 'MYSQL_DABA', '');
+define( 'MYSQL_USER', '2fast4you');
+define( 'MYSQL_PASS', '2fast4you');
+define( 'MYSQL_DABA', '2fast4you');
 
 /*
 

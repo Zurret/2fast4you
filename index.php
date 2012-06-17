@@ -1,31 +1,29 @@
 <?php
-
-// Session starten
 session_start();
 
 // Einige wichtige Dateien laden
-include_once( 'include/mysql.php' );                                     // MySQL-Daten laden ..
-include_once( 'include/functions.php' );                                 // Funktionen laden ..
-include_once( 'include/settings.php' );                                  // Einstellungen laden ..
-include_once( 'include/msgsystem.php' );                                 // Betreff-Nachrichten laden ..
-include_once( 'include/busy.php' );                                      // Beschäftigungsskript laden ..
-include_once( 'include/wetter.php' );                                    // Wetterinformationen laden ..
-include_once( 'include/club.php' );                                      // Club laden ..
-include_once( 'include/shops.php' );                                     // Shops laden ..
-include_once( 'include/sonstiges.php' );                                 // Sonstiges laden ..
-include_once( 'include/stadt.php' );                                     // Stadt laden ..
-include_once( 'include/player.php' );                                    // Spielermenü laden ..
-include_once( 'include/lohn.php' );                                      // Joblöhne laden ..
-include_once( 'include/tune.php' );                                      // Namen/Kategorien der Tuningteile laden ..
-include_once( 'include/sponsoren.php' );                                 // Sponsoren laden ..
-include_once( 'include/privat.php' );                                    // Privatbereich laden ..
-include_once( 'include/skills.php' );                                    // Fähigkeiten laden ..
-include_once( 'include/userinfo.php' );                                  // Benutzerinfos laden ..
-include_once( 'include/buddys.php' );                                    // Benutzerinfos laden ..
-include_once( 'include/action.php' );                                    // Actions laden ..
-include_once( 'include/event.php' );                                     // Hinweisskript laden ..
-include_once( DIR_LANGUAGE . PAGE_LANGUAGE . '/root.php' );              // Quellseitensprachdatei laden ..
-include_once( DIR_LANGUAGE . PAGE_LANGUAGE . '/streckennames.php' );     // Streckentypnamen laden ..
+require_once( 'include/mysql.php' );                                     // MySQL-Daten laden ..
+require_once( 'include/functions.php' );                                 // Funktionen laden ..
+require_once( 'include/settings.php' );                                  // Einstellungen laden ..
+require_once( 'include/msgsystem.php' );                                 // Betreff-Nachrichten laden ..
+require_once( 'include/busy.php' );                                      // Beschäftigungsskript laden ..
+require_once( 'include/wetter.php' );                                    // Wetterinformationen laden ..
+require_once( 'include/club.php' );                                      // Club laden ..
+require_once( 'include/shops.php' );                                     // Shops laden ..
+require_once( 'include/sonstiges.php' );                                 // Sonstiges laden ..
+require_once( 'include/stadt.php' );                                     // Stadt laden ..
+require_once( 'include/player.php' );                                    // Spielermenü laden ..
+require_once( 'include/lohn.php' );                                      // Joblöhne laden ..
+require_once( 'include/tune.php' );                                      // Namen/Kategorien der Tuningteile laden ..
+require_once( 'include/sponsoren.php' );                                 // Sponsoren laden ..
+require_once( 'include/privat.php' );                                    // Privatbereich laden ..
+require_once( 'include/skills.php' );                                    // Fähigkeiten laden ..
+require_once( 'include/userinfo.php' );                                  // Benutzerinfos laden ..
+require_once( 'include/buddys.php' );                                    // Benutzerinfos laden ..
+require_once( 'include/action.php' );                                    // Actions laden ..
+require_once( 'include/event.php' );                                     // Hinweisskript laden ..
+require_once( DIR_LANGUAGE . PAGE_LANGUAGE . '/root.php' );              // Quellseitensprachdatei laden ..
+require_once( DIR_LANGUAGE . PAGE_LANGUAGE . '/streckennames.php' );     // Streckentypnamen laden ..
 
 // Bereich überprüfen und
 switch($FormVars['c']) {

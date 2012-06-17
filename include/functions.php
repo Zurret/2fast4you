@@ -38,11 +38,11 @@ function array2text($text, $array) {
 }
 
 function checkFormdata() {
-    global $HTTP_POST_VARS;
-    global $HTTP_GET_VARS;
+    global $_POST;
+    global $_GET;
     $out = array();
-    if(isset($HTTP_POST_VARS)){
-        while (list($key, $val) = each($HTTP_POST_VARS)){
+    if(isset($_POST)){
+        while (list($key, $val) = each($_POST)){
             if(is_array($val)) {
                 while (list($key1, $val1) = each($val)){
                     $out[strtolower($key)][strtolower($key1)] = htmlspecialchars($val1);
@@ -52,8 +52,8 @@ function checkFormdata() {
             }
         }
     }
-    if(isset($HTTP_GET_VARS)){
-        while (list($key, $val) = each($HTTP_GET_VARS)){
+    if(isset($_GET)){
+        while (list($key, $val) = each($_GET)){
             if(is_array($val)) {
                 while (list($key1, $val1) = each($val)){
                     $out[strtolower($key)][strtolower($key1)] = htmlspecialchars($val1);

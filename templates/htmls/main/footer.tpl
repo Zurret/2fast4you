@@ -3,7 +3,7 @@
      <td height="5" class="space"></td>
   </tr>
     <tr>
-    <td width="100%" align="center" class="innen">www.2f4y-thegame.de - <a href="index.php?c=agb">{ROOT_AGB}</a> - <a href="index.php?c=regeln">{ROOT_REGELN}</a> - <a href="index.php?c=impressum">{ROOT_IMPRESSUM}</a></td>
+    <td width="100%" align="center" class="innen">All rights reserved - <a href="index.php?c=agb">{ROOT_AGB}</a> - <a href="index.php?c=regeln">{ROOT_REGELN}</a> - <a href="index.php?c=impressum">{ROOT_IMPRESSUM}</a></td>
   </tr>
   <tr>
      <td height="5" class="space"></td>

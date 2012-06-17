@@ -1,5 +1,10 @@
 <?php
 
+// Einstellung für PHP Error
+error_reporting(E_ALL ^ E_NOTICE ^ E_DEPRECATED);
+ini_set('display_errors', TRUE);
+ini_set('log_errors', TRUE);
+
 // Die Standardspieleinstellungen laden
 require_once( 'defaults.php' );
 
@@ -7,7 +12,7 @@ require_once( 'defaults.php' );
 $FormVars = checkFormdata();
 
 // Serveradresse
-define( 'SERVER',               'http://www.2f4y-thegame.de/');
+define( 'SERVER',               'http://localhost/2fast4you/');
 
 // Ordnerstruktur
 define( 'ROOT',                 '' );
